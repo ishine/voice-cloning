@@ -379,23 +379,8 @@ class MultiPeriodDiscriminator(torch.nn.Module):
         discs = [DiscriminatorS(use_spectral_norm=use_spectral_norm)]
         discs = discs + [DiscriminatorP(i, use_spectral_norm=use_spectral_norm) for i in periods]
         self.discriminators = nn.ModuleList(discs)
-        self.ref_resize = nn.Conv1d(256, 1, 1)
-        self.ref_concat = nn.Conv1d(2, 1, 1)
 
-    def forward(self, y, y_hat, embed_ref):
-        if embed_ref.shape[0] != y.shape[0]:
-            embed_ref = embed_ref[:len(x)].cuda(0, non_blocking=True)
-
-        embed_ref = torch.unsqueeze(embed_ref, axis=-1)
-        embed_ref = self.ref_resize(embed_ref)
-        embed_ref = torch.broadcast_to(embed_ref, (y.shape[0], 1, y.shape[-1]))
-
-        y = torch.cat((y, embed_ref), dim=1)
-        y = self.ref_concat(y)
-        y_hat = torch.cat((y_hat, embed_ref), dim=1)
-        y_hat = self.ref_concat(y_hat)
-        del embed_ref
-
+    def forward(self, y, y_hat):
         y_d_rs = []
         y_d_gs = []
         fmap_rs = []
@@ -409,7 +394,6 @@ class MultiPeriodDiscriminator(torch.nn.Module):
             fmap_gs.append(fmap_g)
 
         return y_d_rs, y_d_gs, fmap_rs, fmap_gs
-
 
 
 class SynthesizerTrn(nn.Module):
@@ -478,12 +462,13 @@ class SynthesizerTrn(nn.Module):
     else:
       self.dp = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
 
-    if n_speakers > 1:
-      self.emb_g = nn.Embedding(n_speakers, gin_channels)
+    # if n_speakers > 1:
+    #   self.emb_g = nn.Embedding(n_speakers, gin_channels)
+    self.emb_g = nn.Embedding(512, gin_channels)
 
   def forward(self, x, x_lengths, y, y_lengths, embed_ref, sid=None):
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
-    g = embed_ref.unsqueeze(-1) # [b, h, 1]
+    g = self.emb_g(embed_ref).unsqueeze(-1) # [b, h, 1]
     # if self.n_speakers > 0:
     #   g = self.emb_g(sid).unsqueeze(-1) # [b, h, 1]
     # else:
