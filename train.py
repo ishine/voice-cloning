@@ -12,7 +12,7 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
-# from resemblyzer import VoiceEncoder
+# from resemblyzer import VoiceEncoder, preprocess_wav
 from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForXVector
 
 import commons
