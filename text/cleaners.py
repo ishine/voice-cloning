@@ -95,26 +95,30 @@ def english_cleaners2(text):
   text = convert_to_ascii(text)
   text = lowercase(text)
   text = expand_abbreviations(text)
-  phonemes = phonemize(text, language='en-us', backend='espeak', strip=True, preserve_punctuation=True, with_stress=True)
+  phonemes = phonemize(text, language='en-us', backend='espeak', strip=True,
+                       preserve_punctuation=True, with_stress=True, language_switch="remove-flags",
+                       words_mismatch='ignore')
   phonemes = collapse_whitespace(phonemes)
   return phonemes
 
 
 def vietnamese_cleaner(text):
-  '''Pipeline for English text, including abbreviation expansion. + punctuation + stress'''
-  # text = convert_to_ascii(text)
-  # text = lowercase(text)
+  '''Pipeline for Vietnamese text, including abbreviation expansion. + punctuation + stress'''
+  text = convert_to_ascii(text)
+  text = lowercase(text)
   # text = expand_abbreviations(text)
-  phonemes = phonemize(text.lower(), language='vi', backend='espeak', strip=True, preserve_punctuation=True, with_stress=True, language_switch='remove-flags')
+  phonemes = phonemize(text, language='vi', backend='espeak', strip=True,
+                       preserve_punctuation=True, with_stress=True, language_switch='remove-flags',
+                       words_mismatch='ignore')
   phonemes = collapse_whitespace(phonemes)
 
   # remove ()
-  while '(' in phonemes:
-    start = phonemes.index("(")
-    end = phonemes.index(")")
-    if end < len(phonemes)-1:
-        phonemes = phonemes[:start] + phonemes[end+1:]
-    else:
-        phonemes = phonemes[:start]
+  # while '(' in phonemes:
+  #   start = phonemes.index("(")
+  #   end = phonemes.index(")")
+  #   if end < len(phonemes)-1:
+  #       phonemes = phonemes[:start] + phonemes[end+1:]
+  #   else:
+  #       phonemes = phonemes[:start]
 
   return phonemes
