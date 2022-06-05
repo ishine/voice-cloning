@@ -12,7 +12,8 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
-from resemblyzer import VoiceEncoder
+# from resemblyzer import VoiceEncoder
+from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForXVector
 
 import commons
 import utils
@@ -52,7 +53,8 @@ for handler in logger.handlers:
 
 torch.backends.cudnn.benchmark = True
 global_step = 0
-encoder = VoiceEncoder()
+# encoder = VoiceEncoder()
+encoder = Wav2Vec2ForXVector.from_pretrained("anton-l/wav2vec2-base-superb-sv")
 
 
 def main():
@@ -184,7 +186,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
       y = commons.slice_segments(y, ids_slice * hps.data.hop_length, hps.train.segment_size) # slice
 
       # Discriminator
-      y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach(), embed_ref)
+      y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
       with autocast(enabled=False):
         loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
         loss_disc_all = loss_disc
@@ -196,7 +198,15 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
 
     with autocast(enabled=hps.train.fp16_run):
       # Generator
-      y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat, embed_ref)
+      y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
+      # B, 1, Sequence length
+      un_z = torch.squeeze(z, dim=1)
+      myin = {
+          "input_values": un_z,
+          "attention_mask": torch.ones_like(un_z, dtype=torch.int32)
+      }
+      ref_hat = encoder(**myin).embeddings
+
       with autocast(enabled=False):
         loss_dur = torch.sum(l_length.float())
         loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
@@ -205,10 +215,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
         loss_fm = feature_loss(fmap_r, fmap_g)
         loss_gen, losses_gen = generator_loss(y_d_hat_g)
         # print("Z shape", z.shape)
-        ref_hat = torch.zeros(embed_ref.shape)
-        for i, wav in enumerate(z):
-            ref_hat[i] = encoder.embed_utterance(wav[0])
-        loss_voice = F.mse_loss(ref_hat, embed_ref)
+        loss_voice = F.cosine_similarity(embed_ref, ref_hat)
 
         loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl + loss_voice
 
