@@ -10,7 +10,7 @@ from mel_processing import spectrogram_torch
 from utils import load_wav_to_torch, load_filepaths_and_text
 from text import text_to_sequence, cleaned_text_to_sequence
 
-from resemblyzer import VoiceEncoder, preprocess_wav
+# from resemblyzer import VoiceEncoder, preprocess_wav
 from pathlib import Path
 
 
@@ -38,7 +38,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         self.max_text_len = getattr(hparams, "max_text_len", 190)
 
         # for voice ref embeddings
-        self.voice_encoder = VoiceEncoder()
+        # self.voice_encoder = VoiceEncoder()
 
         random.seed(1234)
         random.shuffle(self.audiopaths_and_text)
@@ -82,8 +82,11 @@ class TextAudioLoader(torch.utils.data.Dataset):
         return (text, spec, wav, embed_ref)
 
     def get_audio_embed(self, filepath):
-        wav = preprocess_wav(Path(filepath))
-        return torch.tensor(self.voice_encoder.embed_utterance(wav))
+        emb_filename = filename.replace(".wav", ".emb.pt")
+        emb = torch.load(emb_filename)
+        return emb
+        # wav = preprocess_wav(Path(filepath))
+        # return torch.tensor(self.voice_encoder.embed_utterance(wav))
 
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
