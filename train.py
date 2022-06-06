@@ -114,7 +114,7 @@ def run(rank, n_gpus, hps):
             eval_dataset,
             num_workers=1,
             shuffle=False,
-            batch_size=hps.train.batch_size,
+            batch_size=8,
             pin_memory=True,
             drop_last=False,
             collate_fn=collate_fn)
@@ -258,15 +258,21 @@ def train_and_evaluate(
         with autocast(enabled=hps.train.fp16_run):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
-            # B, 1, Sequence length
-            un_z = torch.squeeze(z, dim=1)
-            un_z = torchaudio.functional.resample(
-                un_z, hps.sampling_rate, 16000)
-            myin = {
-                "input_values": un_z,
-                "attention_mask": torch.ones_like(un_z, dtype=torch.int32)
-            }
-            ref_hat = encoder(**myin).embeddings
+            if hps.use_speaker_loss:
+                # B, 1, T
+                un_z = torch.squeeze(z, dim=1)  # B, T
+                un_z = torchaudio.functional.resample(
+                    un_z, hps.sampling_rate, 16000)
+                mask = torch.ones_like(un_z, dtype=torch.int32)
+                for i in range(len(un_z)):
+                    temp = librosa.effects.trim(un_z[i], top_db=20)
+                    mask[i, len(temp):] = 0
+
+                myin = {
+                    "input_values": un_z,
+                    "attention_mask": mask
+                }
+                ref_hat = encoder(**myin).embeddings
 
             with autocast(enabled=False):
                 loss_dur = torch.sum(l_length.float())
@@ -277,7 +283,9 @@ def train_and_evaluate(
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
                 # print("Z shape", z.shape)
-                loss_voice = F.cosine_similarity(embed_ref, ref_hat)
+                loss_voice = 0.
+                if hps.use_speaker_loss:
+                    loss_voice = F.cosine_similarity(embed_ref, ref_hat)
 
                 loss_gen_all = loss_gen + loss_fm + loss_mel + loss_dur + loss_kl + loss_voice
 
@@ -371,6 +379,7 @@ def evaluate(hps, generator, eval_loader, writer_eval):
                         y_lengths, embed_ref) in enumerate(eval_loader):
             x, x_lengths = x.cuda(0), x_lengths.cuda(0)
             spec, spec_lengths = spec.cuda(0), spec_lengths.cuda(0)
+            embed_ref = embed_ref.cuda(0)
             y, y_lengths = y.cuda(0), y_lengths.cuda(0)
 
             # remove else

@@ -508,7 +508,8 @@ class SynthesizerTrn(nn.Module):
 
   def infer(self, x, x_lengths, embed_ref, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
-    g = embed_ref.unsqueeze(-1) # [b, h, 1]
+    # g = embed_ref.unsqueeze(-1) # [b, h, 1]
+    g = self.emb_g(embed_ref).unsqueeze(-1) # [b, h, 1]
     # if self.n_speakers > 0:
     #   g = self.emb_g(sid).unsqueeze(-1) # [b, h, 1]
     # else:
@@ -542,4 +543,3 @@ class SynthesizerTrn(nn.Module):
     z_hat = self.flow(z_p, y_mask, g=g_tgt, reverse=True)
     o_hat = self.dec(z_hat * y_mask, g=g_tgt)
     return o_hat, y_mask, (z, z_p, z_hat)
-

@@ -116,7 +116,7 @@ def english_cleaners3(text):
 
 def vietnamese_cleaner(text):
   '''Pipeline for Vietnamese text, including abbreviation expansion. + punctuation + stress'''
-  text = convert_to_ascii(text)
+  # text = convert_to_ascii(text)
   text = lowercase(text)
   # text = expand_abbreviations(text)
   phonemes = phonemize(text, language='vi', backend='espeak', strip=True,

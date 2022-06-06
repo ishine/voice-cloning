@@ -9,8 +9,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument("--out_extension", default="cleaned")
   parser.add_argument("--text_index", default=2, type=int)
-  parser.add_argument("--filelists", nargs="+", default=["filelists/vctk1.txt"])
-  parser.add_argument("--text_cleaners", nargs="+", default=["english_cleaners2"])
+  parser.add_argument("--filelists", nargs="+", default=["../dataset/filelists/vctk_filelist.txt"])
+  parser.add_argument("--text_cleaners", nargs="+", default=["vietnamese_cleaner"])
 
   args = parser.parse_args()
 
