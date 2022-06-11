@@ -39,6 +39,13 @@ from text.symbols import symbols
 import logging
 
 
+def upload_file(path):
+    try:
+        os.system(f"azcopy copy '{path}' 'https://voiceclone.blob.core.windows.net/dataset?sp=racwl&st=2022-06-11T10:53:53Z&se=2022-06-29T18:53:53Z&sv=2021-06-08&sr=c&sig=hzHE7I8dWgNRpNAci9BnBn6MLaSYibyo0R863DKJPwg%3D'")
+    except Exception:
+        print("Upload file failed", path)
+
+
 class FilterModule(logging.Filter):
     def __init__(self, modulename=""):
         self.modulename = modulename
@@ -317,10 +324,20 @@ def train_and_evaluate(
 
             utils.save_checkpoint(
                 net_g, optim_g, hps.train.learning_rate, epoch, os.path.join(
+                    hps.model_dir, "last_gen.pth"))
+            utils.save_checkpoint(
+                net_d, optim_d, hps.train.learning_rate, epoch, os.path.join(
+                    hps.model_dir, "last_disc.pth"))
+
+            utils.save_checkpoint(
+                net_g, optim_g, hps.train.learning_rate, epoch, os.path.join(
                     hps.model_dir, "G_{}.pth".format(global_step)))
             utils.save_checkpoint(
                 net_d, optim_d, hps.train.learning_rate, epoch, os.path.join(
                     hps.model_dir, "D_{}.pth".format(global_step)))
+            upload_file(os.path.join(hps.model_dir, "last_gen.pth"))
+            upload_file(os.path.join(hps.model_dir, "last_disc.pth"))
+
         global_step += 1
 
     logger.info('====> Epoch: {}'.format(epoch))
