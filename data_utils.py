@@ -23,6 +23,9 @@ class TextAudioLoader(torch.utils.data.Dataset):
     def __init__(self, audiopaths_and_text, hparams):
         self.audiopaths_and_text = load_filepaths_and_text(audiopaths_and_text)
         self.audio_map = self.gen_audio_map(self.audiopaths_and_text)
+        self.embed_dir = hparams.embed_dir
+        self.data_dir = hparams.data_dir
+
         self.text_cleaners  = hparams.text_cleaners
         self.max_wav_value  = hparams.max_wav_value
         self.sampling_rate  = hparams.sampling_rate
@@ -83,12 +86,14 @@ class TextAudioLoader(torch.utils.data.Dataset):
 
     def get_audio_embed(self, filepath):
         emb_filename = filename.replace(".wav", ".emb.pt")
+        emb_filename = os.path.join(self.embed_dir, emb_filename)
         emb = torch.load(emb_filename)
         return emb
         # wav = preprocess_wav(Path(filepath))
         # return torch.tensor(self.voice_encoder.embed_utterance(wav))
 
     def get_audio(self, filename):
+        filename = os.path.join(self.data_dir, filename)
         audio, sampling_rate = load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
             raise ValueError("{} {} SR doesn't match target {} SR".format(
