@@ -147,12 +147,12 @@ def load_filepaths_and_text(filename, split="|"):
 
 def get_hparams(init=True):
   parser = argparse.ArgumentParser()
-  parser.add_argument('-c', '--config', type=str, default="./configs/base.json",
+  parser.add_argument('-c', '--config', type=str, default="./configs/my_base.json",
                       help='JSON file for configuration')
   parser.add_argument('-m', '--model', type=str, required=True,
                       help='Model name')
   parser.add_argument('-md', '--model_dir', type=str, required=False,
-                      help='Model output dir', default="./logs")
+                      help='Model output dir', default="../checkpoints")
 
   args = parser.parse_args()
   model_dir = os.path.join(args.model_dir, args.model)

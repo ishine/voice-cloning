@@ -464,11 +464,12 @@ class SynthesizerTrn(nn.Module):
 
     # if n_speakers > 1:
     #   self.emb_g = nn.Embedding(n_speakers, gin_channels)
-    self.emb_g = nn.Embedding(512, gin_channels)
+    self.emb_g = nn.Linear(512, gin_channels)
 
   def forward(self, x, x_lengths, y, y_lengths, embed_ref, sid=None):
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
-    g = self.emb_g(embed_ref).unsqueeze(-1) # [b, h, 1]
+    g = self.emb_g(embed_ref).unsqueeze(-1)# [b, h, 1]
+
     # if self.n_speakers > 0:
     #   g = self.emb_g(sid).unsqueeze(-1) # [b, h, 1]
     # else:

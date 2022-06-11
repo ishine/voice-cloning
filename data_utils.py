@@ -69,7 +69,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         for audiopath, idx, text in self.audiopaths_and_text:
             if self.min_text_len <= len(text) and len(text) <= self.max_text_len:
                 audiopaths_and_text_new.append([audiopath, idx, text])
-                lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+                lengths.append(os.path.getsize(os.path.join(self.data_dir, audiopath)) // (2 * self.hop_length))
         self.audiopaths_and_text = audiopaths_and_text_new
         self.lengths = lengths
 
@@ -89,9 +89,9 @@ class TextAudioLoader(torch.utils.data.Dataset):
         return (text, spec, wav, embed_ref)
 
     def get_audio_embed(self, filepath):
-        emb_filename = filename.replace(".wav", ".emb.pt")
+        emb_filename = filepath.replace(".wav", ".emb.pt")
         emb_filename = os.path.join(self.embed_dir, emb_filename)
-        emb = torch.load(emb_filename)
+        emb = torch.load(emb_filename, "cpu")
         return emb
         # wav = preprocess_wav(Path(filepath))
         # return torch.tensor(self.voice_encoder.embed_utterance(wav))
@@ -106,7 +106,11 @@ class TextAudioLoader(torch.utils.data.Dataset):
         audio_norm = audio_norm.unsqueeze(0)
         spec_filename = filename.replace(".wav", ".spec.pt")
         if os.path.exists(spec_filename):
-            spec = torch.load(spec_filename)
+            try:
+                spec = torch.load(spec_filename, "cpu")
+            except EOFError:
+                print(spec_filename)
+                raise EOFError()
         else:
             spec = spectrogram_torch(audio_norm, self.filter_length,
                 self.sampling_rate, self.hop_length, self.win_length,
@@ -251,13 +255,13 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         audio_norm = audio_norm.unsqueeze(0)
         spec_filename = filename.replace(".wav", ".spec.pt")
         if os.path.exists(spec_filename):
-            spec = torch.load(spec_filename)
+            spec = torch.load(spec_filename, "cpu")
         else:
             spec = spectrogram_torch(audio_norm, self.filter_length,
                 self.sampling_rate, self.hop_length, self.win_length,
                 center=False)
             spec = torch.squeeze(spec, 0)
-            torch.save(spec, spec_filename)
+            torch.save(spec.detach().cpu(), spec_filename)
         return spec, audio_norm
 
     def get_text(self, text):

@@ -10,3 +10,5 @@ build
 *.c
 dataset/wav/
 .DS_Store
+monotonic_align/build/
+monotonic_align/monotonic_align/
