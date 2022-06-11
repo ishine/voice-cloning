@@ -79,9 +79,13 @@ class TextAudioLoader(torch.utils.data.Dataset):
         text = self.get_text(text)
         spec, wav = self.get_audio(audiopath)
         # ref_spec, _ = self.get_audio(random.choice(self.audio_map[au_id]))
-        with torch.no_grad():
-            ref_path = random.choice(self.audio_map[au_id])
-            embed_ref = self.get_audio_embed(ref_path)
+        num_ref = random.randint(1, len(self.audio_map[au_id]))
+        ref_path_list = random.choices(self.audio_map[au_id], k=num_ref)
+        ref_load_list = []
+        for ref_path in ref_path_list:
+            ref_load_list.append(self.get_audio_embed(ref_path))
+        embed_ref = torch.mean(torch.stack(ref_load_list), dim=0)
+
         return (text, spec, wav, embed_ref)
 
     def get_audio_embed(self, filepath):
