@@ -138,7 +138,7 @@ def main():
         _, _, _, global_step = utils.load_checkpoint(
             utils.latest_checkpoint_path(
                 hps.model_dir, "G_*.pth"), net_g, optim_g)
-        global_step = (epoch_str - 1) * len(train_loader)
+        # global_step = (epoch_str - 1) * len(train_loader)
         epoch_str = global_step // len(train_loader) + 1
     except BaseException:
         print("Load Failed")
@@ -296,7 +296,7 @@ def train_and_evaluate(
         scaler.update()
         if hps.train.use_speaker_loss:
             loss_voice = loss_voice.item()
-        print(f"Epoch {epoch} [{batch_idx/len(train_loader) * 100.:.3f}] | Step {global_step} | Real {np.mean(losses_disc_r):.7f} | Fake {np.mean(losses_disc_g):.7f} | Gen {loss_gen.item():.7f} | Fm {loss_fm.item():.7f} | Mel {loss_mel.item():.7f} | Dur {loss_dur.item():.7f} | Voice {loss_voice:.7f} | T {time() - st:.3f}")
+        print(f"Epoch {epoch} [{batch_idx/len(train_loader) * 100.:.2f}%] | Step {global_step} | Real {np.sum(losses_disc_r):.7f} | Fake {np.sum(losses_disc_g):.7f} | Gen {loss_gen.item():.7f} | Fm {loss_fm.item():.7f} | Mel {loss_mel.item():.7f} | Dur {loss_dur.item():.7f} | Voice {loss_voice:.7f} | T {time() - st:.3f}")
 
         # if global_step % hps.train.log_interval == 0:
         #     lr = optim_g.param_groups[0]['lr']
@@ -345,10 +345,10 @@ def train_and_evaluate(
         if global_step % hps.train.eval_interval == 0 and global_step > 0:
             # evaluate(hps, net_g, eval_loader, writer_eval)
             ckpts = os.listdir(hps.model_dir)
-            ckpts = [file for file in ckpts if ".pth" in file]
-            lim = 10
+            ckpts = [file for file in ckpts if ".pth" in file and "last" not in file]
+            lim = 20
             if len(ckpts) > lim*2:
-                ckpts.sort(key=lambda x: int(x.replace(".pth").split("_")[-1]))
+                ckpts.sort(key=lambda x: int(x.replace(".pth", "").split("_")[-1]))
                 num_elim = len(ckpts) - lim
                 elim_list = ckpts[:num_elim]
                 for ckpt in elim_list:
