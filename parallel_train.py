@@ -81,7 +81,8 @@ def main():
 
     encoder = None
     if hps.train.use_speaker_loss:
-        encoder = Wav2Vec2ForXVector.from_pretrained("anton-l/wav2vec2-base-superb-sv")
+        # encoder = Wav2Vec2ForXVector.from_pretrained("anton-l/wav2vec2-base-superb-sv")
+        encoder = Wav2Vec2ForXVector.from_pretrained("../wav2vec")
         encoder = DataParallel(encoder).to(device)
 
     logger = utils.get_logger(hps.model_dir)
@@ -296,7 +297,7 @@ def train_and_evaluate(
         scaler.update()
         if hps.train.use_speaker_loss:
             loss_voice = loss_voice.item()
-        print(f"Epoch {epoch} [{batch_idx/len(train_loader) * 100.:.2f}%] | Step {global_step} | Real {np.sum(losses_disc_r):.7f} | Fake {np.sum(losses_disc_g):.7f} | Gen {loss_gen.item():.7f} | Fm {loss_fm.item():.7f} | Mel {loss_mel.item():.7f} | Dur {loss_dur.item():.7f} | Voice {loss_voice:.7f} | T {time() - st:.3f}")
+        logger.info(f"Epoch {epoch} [{batch_idx/len(train_loader) * 100.:.2f}%] | Step {global_step} | Real {np.sum(losses_disc_r):.7f} | Fake {np.sum(losses_disc_g):.7f} | Gen {loss_gen.item():.7f} | Fm {loss_fm.item():.7f} | Mel {loss_mel.item():.7f} | Dur {loss_dur.item():.7f} | Voice {loss_voice:.7f} | T {time() - st:.3f}")
 
         # if global_step % hps.train.log_interval == 0:
         #     lr = optim_g.param_groups[0]['lr']

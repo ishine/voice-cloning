@@ -4,7 +4,7 @@ import librosa
 from tqdm import tqdm
 
 
-with open("./filelists/my_train_filelist.txt.cleaned", "r") as f:
+with open("../data/jvs_filelist_romanji.txt.cleaned", "r") as f:
     data = f.readlines()
 
 data = [line.strip().split("|")[0] for line in data]
@@ -15,4 +15,4 @@ for path in tqdm(data):
     result.append([path, len(au)])
 
 df = pd.DataFrame(result, columns=["path", "len"])
-df.to_csv("../data/check.csv", index=False)
+df.to_csv("../data/check_jvs.csv", index=False)
